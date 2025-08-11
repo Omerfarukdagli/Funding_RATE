@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+dash
+plotly
+pandas
+pyarrow
+requests
+websockets
