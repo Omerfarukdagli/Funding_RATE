@@ -48,13 +48,7 @@ else:
 
 DATABASE_URL = urlunparse(parsed._replace(query=urlencode(qs, doseq=True)))
 
-engine: Optional[AsyncEngine] = create_async_engine(
-    DATABASE_URL,
-    pool_size=5,
-    max_overflow=5,
-    pool_recycle=1800,   # uzun bağlantılarda kopma yaşamamak için
-    connect_args=CONNECT_ARGS,
-)
+engine: Optional[AsyncEngine] = None
 
 CREATE_SQL = """
 CREATE TABLE IF NOT EXISTS funding_min(
@@ -106,8 +100,33 @@ async def heartbeat():
 
 # ==== DB INIT/RESTORE ====
 async def init_db():
-    if not engine:
-        return
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL eksik! Railway'de App → Variables → Add Variable Reference ile ekleyin.")
+
+    # Teşhis logları
+    try:
+        import asyncpg
+        print(f"[DB] asyncpg={asyncpg.__version__}")
+    except Exception as e:
+        print("[DB] asyncpg import FAILED:", repr(e))
+
+    parsed = urlparse(DATABASE_URL)
+    sslmode = parse_qs(parsed.query).get("sslmode", [""])[0]
+    print(f"[DB] Dialect={DATABASE_URL.split(':',1)[0]} host={parsed.hostname} sslmode={sslmode}")
+
+    global engine
+    try:
+        engine = create_async_engine(
+            DATABASE_URL,
+            pool_size=5,
+            max_overflow=5,
+            pool_recycle=1800,
+            connect_args=CONNECT_ARGS,
+        )
+    except Exception as e:
+        print("[DB] create_async_engine FAILED:", repr(e))
+        raise
+
     async with engine.begin() as conn:
         await conn.execute(text(CREATE_SQL))
 
