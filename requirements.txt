@@ -9,4 +9,3 @@ pandas
 pyarrow
 websockets
 requests
-psycopg2-binary
