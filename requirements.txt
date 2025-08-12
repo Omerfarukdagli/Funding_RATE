@@ -1,8 +1,10 @@
+SQLAlchemy>=2.0
+asyncpg
 fastapi
 uvicorn
 dash
 plotly
 pandas
 pyarrow
-requests
 websockets
+requests
